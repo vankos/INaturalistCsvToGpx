@@ -1,4 +1,5 @@
-Usage just drug and drop csv file to exe
+# Usage
+just drug and drop csv file to exe
 or 
 call 
 ```
