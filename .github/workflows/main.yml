@@ -27,7 +27,7 @@ jobs:
       - name: Publish project
         run: dotnet publish -c Release -r win-x64 --self-contained -o ./output
 
-        - name: Zip selected output files
+      - name: Zip selected output files
         run: |
           $exeFile = Get-ChildItem -Path ./output -Filter INaturalistCsvToGpx.exe | Select-Object -First 1
           $dllFile = Get-ChildItem -Path ./output -Filter INaturalistCsvToGpx.dll | Select-Object -First 1
