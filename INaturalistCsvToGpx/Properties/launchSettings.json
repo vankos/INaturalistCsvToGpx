@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "INaturalistCsvToGpx": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\Users\\Ivan\\Downloads\\observations-497041.csv\\observations-497041.csv"
+    }
+  }
+}
