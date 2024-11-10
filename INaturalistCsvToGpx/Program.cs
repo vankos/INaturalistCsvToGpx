@@ -1,27 +1,19 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Xml;
+using Microsoft.VisualBasic.FileIO;
 
-string[] file = OpenCsv();
-string gpx = GenerateGpx(file);
+ValidateComandLineParam();
+string gpx = GenerateGpx();
 SaveGpx(gpx);
 Console.WriteLine("Done! Press any key to exit.");
 Console.ReadKey();
 
-string[] OpenCsv()
+void ValidateComandLineParam()
 {
     string[] commandLineArgs = Environment.GetCommandLineArgs();
-    ValidateComandLineParam(commandLineArgs);
-    string filePath = commandLineArgs[1];
-    string[] allLines = File.ReadAllLines(filePath);
-    return allLines;
-}
-
-void ValidateComandLineParam(string[] commandLineArgs)
-{
-    if(commandLineArgs.Length != 2)
+    if (commandLineArgs.Length != 2)
     {
         Console.WriteLine("Usage: INaturalistCsvToGpx <file>");
         Environment.Exit(1);
@@ -40,26 +32,22 @@ void ValidateComandLineParam(string[] commandLineArgs)
     }
 }
 
-string GenerateGpx(string[] file)
+string GenerateGpx()
 {
-    string headersString = file[0];
-    string[] headers = headersString.Split(",");
-    int latIndex = Array.IndexOf(headers, Constants.LattitudeFieldName);
-    if(latIndex == -1)
+    string[] commandLineArgs = Environment.GetCommandLineArgs();
+    string filePath = commandLineArgs[1];
+    using TextFieldParser parser = new(filePath);
+    parser.TextFieldType = FieldType.Delimited;
+    parser.SetDelimiters(",");
+    string[]? headers = parser.ReadFields();
+    if (headers == null)
     {
-        Console.WriteLine($"{Constants.LattitudeFieldName} field not found");
+        Console.WriteLine("No headers found in CSV file");
         Environment.Exit(1);
     }
 
-
-    int lonIndex = Array.IndexOf(headers, Constants.LongitudeFieldName);
-    if (lonIndex == -1)
-    {
-        Console.WriteLine($"{Constants.LongitudeFieldName} field not found");
-        Environment.Exit(1);
-    }
-
-    StringBuilder gpxStringBuilder = new StringBuilder();
+    GetCoordinatesFieldsIndexes(headers, out int latIndex, out int lonIndex);
+    StringBuilder gpxStringBuilder = new();
     using (XmlWriter writer = XmlWriter.Create(gpxStringBuilder, new XmlWriterSettings { Indent = true }))
     {
         writer.WriteStartDocument();
@@ -67,28 +55,34 @@ string GenerateGpx(string[] file)
         writer.WriteAttributeString("version", "1.1");
         writer.WriteAttributeString("creator", "INaturalistCsvToGpx");
         writer.WriteElementString("desc", "Converted gpx from INaturalist CSV");
-
-        foreach (string line in file.Skip(1))
+        while (!parser.EndOfData)
         {
-            string[] fields = Regex.Split(line, ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+            string[]? fields = parser.ReadFields();
+            if (fields == null)
+            {
+                continue;
+            }
+
             string lat = fields[latIndex];
             string lon = fields[lonIndex];
             writer.WriteStartElement("wpt");
             writer.WriteAttributeString("lat", lat);
             writer.WriteAttributeString("lon", lon);
+            writer.WriteStartElement("desc");
             for (int i = 0; i < fields.Length; i++)
             {
                 if (i == latIndex || i == lonIndex)
                 {
                     continue;
                 }
-                writer.WriteComment($"{headers[i]}: {fields[i]}");
+               
+                writer.WriteString($"{headers[i]}: {fields[i]} <br>");
             }
+
+            writer.WriteEndElement();
             writer.WriteEndElement();
         }
 
-        writer.WriteEndElement();
-        writer.WriteEndElement();
         writer.WriteEndElement();
         writer.WriteEndDocument();
     }
@@ -100,4 +94,22 @@ void SaveGpx(string gpx)
 {
     string fileName = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[1]) + ".gpx";
     File.WriteAllText(fileName, gpx);
+
+}
+
+static void GetCoordinatesFieldsIndexes(string[] headers, out int latIndex, out int lonIndex)
+{
+    latIndex = Array.IndexOf(headers, Constants.LattitudeFieldName);
+    if (latIndex == -1)
+    {
+        Console.WriteLine($"{Constants.LattitudeFieldName} field not found");
+        Environment.Exit(1);
+    }
+
+    lonIndex = Array.IndexOf(headers, Constants.LongitudeFieldName);
+    if (lonIndex == -1)
+    {
+        Console.WriteLine($"{Constants.LongitudeFieldName} field not found");
+        Environment.Exit(1);
+    }
 }
