@@ -27,8 +27,12 @@ jobs:
       - name: Publish project
         run: dotnet publish -c Release -r win-x64 --self-contained -o ./output
 
-      - name: Zip published output
-        run: Compress-Archive -Path ./output/* -DestinationPath ./output/INaturalistCsvToGpx.zip
+        - name: Zip selected output files
+        run: |
+          $exeFile = Get-ChildItem -Path ./output -Filter INaturalistCsvToGpx.exe | Select-Object -First 1
+          $dllFile = Get-ChildItem -Path ./output -Filter INaturalistCsvToGpx.dll | Select-Object -First 1
+          $configFile = Get-ChildItem -Path ./output -Filter INaturalistCsvToGpx.runtimeconfig.json | Select-Object -First 1
+          Compress-Archive -Path $exeFile.FullName, $dllFile.FullName, $configFile.FullName -DestinationPath ./output/INaturalistCsvToGpx.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
