@@ -48,6 +48,7 @@ string GenerateGpx()
 
     GetCoordinatesFieldsIndexes(headers, out int latIndex, out int lonIndex);
     StringBuilder gpxStringBuilder = new();
+    int commonNameFieldIndex = Array.IndexOf(headers, Constants.CommonNameFieldName);
     using (XmlWriter writer = XmlWriter.Create(gpxStringBuilder, new XmlWriterSettings { Indent = true }))
     {
         writer.WriteStartDocument();
@@ -77,6 +78,17 @@ string GenerateGpx()
                 }
                
                 writer.WriteString($"{headers[i]}: {fields[i]} <br>");
+            }
+
+            writer.WriteEndElement();
+            writer.WriteStartElement("name");
+            if (commonNameFieldIndex != -1)
+            {
+                writer.WriteString(fields[commonNameFieldIndex]);
+            }
+            else
+            {
+                writer.WriteString($"Intauralist export");
             }
 
             writer.WriteEndElement();

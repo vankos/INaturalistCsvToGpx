@@ -6,4 +6,5 @@ internal static class Constants
 
     public const string LattitudeFieldName = "latitude";
     public const string LongitudeFieldName = "longitude";
+    public const string CommonNameFieldName = "common_name";
 }
