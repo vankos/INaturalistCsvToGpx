@@ -55,7 +55,6 @@ string GenerateGpx()
         writer.WriteStartElement("gpx");
         writer.WriteAttributeString("version", "1.1");
         writer.WriteAttributeString("creator", "INaturalistCsvToGpx");
-        writer.WriteElementString("desc", "Converted gpx from INaturalist CSV");
         while (!parser.EndOfData)
         {
             string[]? fields = parser.ReadFields();
@@ -69,32 +68,12 @@ string GenerateGpx()
             writer.WriteStartElement("wpt");
             writer.WriteAttributeString("lat", lat);
             writer.WriteAttributeString("lon", lon);
-            writer.WriteStartElement("desc");
-            for (int i = 0; i < fields.Length; i++)
-            {
-                if (i == latIndex || i == lonIndex)
-                {
-                    continue;
-                }
-               
-                writer.WriteString($"{headers[i]}: {fields[i]} <br>");
-            }
-
-            writer.WriteEndElement();
-            writer.WriteStartElement("name");
-            if (commonNameFieldIndex != -1)
-            {
-                writer.WriteString(fields[commonNameFieldIndex]);
-            }
-            else
-            {
-                writer.WriteString($"Intauralist export");
-            }
-
-            writer.WriteEndElement();
+            AddFieldValuesInDescription(headers, latIndex, lonIndex, writer, fields);
+            AddPointName(commonNameFieldIndex, writer, fields);
             writer.WriteEndElement();
         }
 
+        AddMetadata(writer);
         writer.WriteEndElement();
         writer.WriteEndDocument();
     }
@@ -124,4 +103,42 @@ static void GetCoordinatesFieldsIndexes(string[] headers, out int latIndex, out 
         Console.WriteLine($"{Constants.LongitudeFieldName} field not found");
         Environment.Exit(1);
     }
+}
+
+static void AddFieldValuesInDescription(string[]? headers, int latIndex, int lonIndex, XmlWriter writer, string[]? fields)
+{
+    writer.WriteStartElement("desc");
+    for (int i = 0; i < fields.Length; i++)
+    {
+        if (i == latIndex || i == lonIndex)
+        {
+            continue;
+        }
+
+        writer.WriteString($"{headers[i]}: {fields[i]} <br>");
+    }
+
+    writer.WriteEndElement();
+}
+
+static void AddPointName(int commonNameFieldIndex, XmlWriter writer, string[]? fields)
+{
+    writer.WriteStartElement("name");
+    if (commonNameFieldIndex != -1)
+    {
+        writer.WriteString(fields[commonNameFieldIndex]);
+    }
+    else
+    {
+        writer.WriteString($"Intauralist export");
+    }
+
+    writer.WriteEndElement();
+}
+
+static void AddMetadata(XmlWriter writer)
+{
+    writer.WriteStartElement("metadata");
+    writer.WriteElementString("desc", "Converted gpx from INaturalist CSV");
+    writer.WriteEndElement();
 }
