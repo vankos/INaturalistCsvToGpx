@@ -1,5 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
+using System;
+using System.Globalization;
 using System.Text;
 using System.Xml;
 using Microsoft.VisualBasic.FileIO;
@@ -49,6 +51,8 @@ string GenerateGpx()
     GetCoordinatesFieldsIndexes(headers, out int latIndex, out int lonIndex);
     StringBuilder gpxStringBuilder = new();
     int commonNameFieldIndex = Array.IndexOf(headers, Constants.CommonNameFieldName);
+    int observationTimeFieldIndex = Array.IndexOf(headers, Constants.TimeObservedAtFieldName);
+    List<int> observationHours = new List<int>();
     using (XmlWriter writer = XmlWriter.Create(gpxStringBuilder, new XmlWriterSettings { Indent = true }))
     {
         writer.WriteStartDocument();
@@ -71,9 +75,25 @@ string GenerateGpx()
             AddFieldValuesInDescription(headers, latIndex, lonIndex, writer, fields);
             AddPointName(commonNameFieldIndex, writer, fields);
             writer.WriteEndElement();
+            if (observationTimeFieldIndex != -1 && 
+                DateTime.TryParseExact(
+                    fields[observationTimeFieldIndex],
+                    "yyyy-MM-dd HH:mm:ss 'UTC'",
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.AssumeUniversal,
+                    out DateTime observationTime
+                ))
+            {
+                observationHours.Add((int)observationTime.TimeOfDay.TotalHours);
+            }
         }
 
-        AddMetadata(writer);
+        if (observationHours.Any())
+        {
+            AddMetadata(writer, observationHours);
+        }
+
+        
         writer.WriteEndElement();
         writer.WriteEndDocument();
     }
@@ -136,9 +156,14 @@ static void AddPointName(int commonNameFieldIndex, XmlWriter writer, string[]? f
     writer.WriteEndElement();
 }
 
-static void AddMetadata(XmlWriter writer)
+static void AddMetadata(XmlWriter writer, List<int> observationHours)
 {
+    int modaObservationHour = observationHours.GroupBy(x => x)
+        .OrderByDescending(g => g.Count())
+        .Select(g => g.Key)
+        .First();
     writer.WriteStartElement("metadata");
-    writer.WriteElementString("desc", "Converted gpx from INaturalist CSV");
+    writer.WriteElementString("desc", $"Moda observation hour: {modaObservationHour} UTC");
     writer.WriteEndElement();
+
 }
