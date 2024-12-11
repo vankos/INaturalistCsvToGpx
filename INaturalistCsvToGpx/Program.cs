@@ -104,8 +104,16 @@ string GenerateGpx()
 
 void SaveGpx(string gpx)
 {
+    string sourcePath = Environment.GetCommandLineArgs()[1];
+    string? sourceFolder = Path.GetDirectoryName(sourcePath);
     string fileName = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[1]) + ".gpx";
-    File.WriteAllText(fileName, gpx);
+    string savePath = fileName;
+    if (sourceFolder != null)
+    {
+        savePath = Path.Combine(sourceFolder, fileName);
+    }
+
+    File.WriteAllText(savePath, gpx);
 
 }
 
