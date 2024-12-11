@@ -84,7 +84,8 @@ string GenerateGpx()
                     out DateTime observationTime
                 ))
             {
-                observationHours.Add((int)observationTime.TimeOfDay.TotalHours);
+                DateTime observationTimeLocal = observationTime.ToLocalTime();
+                observationHours.Add((int)observationTimeLocal.TimeOfDay.TotalHours);
             }
         }
 
@@ -163,7 +164,7 @@ static void AddMetadata(XmlWriter writer, List<int> observationHours)
         .Select(g => g.Key)
         .First();
     writer.WriteStartElement("metadata");
-    writer.WriteElementString("desc", $"Moda observation hour: {modaObservationHour} UTC");
+    writer.WriteElementString("desc", $"Moda observation hour: {modaObservationHour}");
     writer.WriteEndElement();
 
 }
